@@ -10,7 +10,7 @@ class Administration(commands.Cog):
         name="ping", usage=".ping", description="Sends pong or your specified message"
     )
     @commands.guild_only()
-    @commands.has_permissions()
+    @commands.has_permissions(manage_roles=True)
     @commands.cooldown(1, 2, commands.BucketType.member)
     async def commandName(self, ctx: commands.Context, msg: str = None):
         await ctx.send("Pong" if not msg else msg, ephemeral=True)
@@ -21,7 +21,7 @@ class Administration(commands.Cog):
         description="Adds a new user to the whitelist",
     )
     @commands.guild_only()
-    @commands.has_permissions()
+    @commands.has_permissions(manage_roles=True)
     @commands.cooldown(1, 2, commands.BucketType.member)
     async def whitelist(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
@@ -33,7 +33,7 @@ class Administration(commands.Cog):
 
     @whitelist.command("list")
     @commands.guild_only()
-    @commands.has_permissions()
+    @commands.has_permissions(manage_roles=True)
     @commands.cooldown(1, 2, commands.BucketType.member)
     async def whitelist_list(self, ctx: commands.Context):
         await ctx.defer(ephemeral=True)
@@ -49,7 +49,7 @@ class Administration(commands.Cog):
 
     @whitelist.command("add")
     @commands.guild_only()
-    @commands.has_permissions()
+    @commands.has_permissions(manage_roles=True)
     @commands.cooldown(1, 2, commands.BucketType.member)
     async def whitelist_add(
         self,
@@ -104,7 +104,7 @@ class Administration(commands.Cog):
 
     @whitelist.command("remove")
     @commands.guild_only()
-    @commands.has_permissions()
+    @commands.has_permissions(manage_roles=True)
     @commands.cooldown(1, 2, commands.BucketType.member)
     async def whitelist_remove(
         self,
