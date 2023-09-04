@@ -66,6 +66,12 @@ class Whitelist:
             username: user_obj.jsonify() for username, user_obj in self.__users.items()
         }
 
+    def get_session(self, session_id: int) -> User | None:
+        for user in self.__users:
+            if session_id in user.list_sessions():
+                return user.username
+        return None
+
     def get_user(self, username: str) -> User | None:
         return self.__users.get(username, None)
 
