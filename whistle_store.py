@@ -7,16 +7,22 @@ from hashlib import sha256
 
 WLSTORE_FILENAME = "store.json"
 
-INITIAL_DATA = {"whitelist": {"example_user": {"session_limit": 0, "sessions": []}}}
+INITIAL_DATA = {
+    "whitelist": {
+        "example_user": {"pretty": "Example User", "session_limit": 0, "sessions": []}
+    }
+}
 
 
 class User:
     username: str
+    pretty: str
     __session_limit: int
     __sessions: List[int]
 
     def __init__(self, username: str, data: Dict):
         self.username = username
+        self.pretty = data.get("pretty", username)
         self.__session_limit = data.get("session_limit", 1)
         self.__sessions = data.get("sessions", [])
 
@@ -67,7 +73,7 @@ class Whitelist:
         }
 
     def get_session(self, session_id: int) -> User | None:
-        for user in self.__users:
+        for user in self.__users.values():
             if session_id in user.list_sessions():
                 return user.username
         return None
@@ -76,10 +82,19 @@ class Whitelist:
         return self.__users.get(username, None)
 
     def add_user(
-        self, username: str, max_sessions: int = 1, sessions: List[int] = []
+        self,
+        username: str,
+        pretty: str = None,
+        max_sessions: int = 1,
+        sessions: List[int] = [],
     ) -> None:
         self.__users[username] = User(
-            username, {"session_limit": max_sessions, "sessions": sessions}
+            username,
+            {
+                "pretty": pretty if pretty else username,
+                "session_limit": max_sessions,
+                "sessions": sessions,
+            },
         )
 
     def list_users(self) -> List[User]:
@@ -117,6 +132,9 @@ class wlStore:
 
     def jsonify(self):
         return {"whitelist": self.__data.get("whitelist").jsonify()}
+
+    def get_whitelist(self) -> Whitelist | None:
+        return self.__data.get("whitelist", None)
 
     @staticmethod
     def from_json(json_data: Dict) -> Dict:
