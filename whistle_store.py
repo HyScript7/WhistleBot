@@ -27,7 +27,11 @@ class User:
         self.__sessions = data.get("sessions", [])
 
     def jsonify(self) -> Dict:
-        return {"session_limit": self.__session_limit, "sessions": self.__sessions}
+        return {
+            "pretty": self.pretty,
+            "session_limit": self.__session_limit,
+            "sessions": self.__sessions,
+        }
 
     def create_session(self, session_id: int):
         if session_id in self.__sessions:
@@ -169,6 +173,9 @@ class wlStore:
         print("Auto saver -- Loop initializing!")
         while 1:
             current_save_hash = data_hash(self.jsonify())
+            print(
+                f"Auto saver -- (Current) {current_save_hash}\n              (Last)    {last_save_hash}"
+            )
             if current_save_hash != last_save_hash:
                 self.save()
                 last_save_hash = current_save_hash

@@ -37,7 +37,11 @@ class User(commands.Cog):
         try:
             await ctx.author.edit(nick=user.pretty)
         except Exception as e:
-            await ctx.reply(f"I could not change your displayname!", ephemeral=True)
+            await ctx.reply(
+                f"I could not change your displayname!",
+                ephemeral=True,
+                delete_after=5.0,
+            )
 
     @commands.hybrid_command(
         name="logout", usage=".logout", description="Clears your sessions"
@@ -56,7 +60,47 @@ class User(commands.Cog):
         try:
             await ctx.author.edit(nick=None)
         except Exception as e:
-            await ctx.reply(f"I could not change your displayname!", ephemeral=True)
+            await ctx.reply(
+                f"I could not change your displayname!",
+                ephemeral=True,
+                delete_after=5.0,
+            )
+
+    @commands.hybrid_command(
+        name="whois",
+        usage=".whois <username>",
+        description="Shows information about a whitelisted user.",
+    )
+    @commands.guild_only()
+    @commands.has_permissions()
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def session_set(self, ctx: commands.Context, username: str):
+        await ctx.defer(ephemeral=True)
+        white_list = self.bot.wl_store.get_whitelist()
+        username = username.lower().replace(" ", "")
+        user = white_list.get_user(username)
+        if user is None:
+            await ctx.reply("Username does not exist", ephemeral=True)
+            return
+        embed = discord.Embed(
+            title=self.bot.wl_brand + " - Whitelist WhoIS",
+            description="Showing information about {}".format(username),
+            color=0xFFFFFF,
+        )
+        embed.add_field(
+            name="Session Limit", value=user.get_session_limit(), inline=True
+        )
+        embed.add_field(
+            name="Sessions",
+            value="\n- ".join([""] + [f"<@{id}>" for id in user.list_sessions()]),
+            inline=True,
+        )
+        embed.add_field(
+            name="Displayname",
+            value=user.pretty,
+            inline=False,
+        )
+        await ctx.reply(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

@@ -117,7 +117,7 @@ class Administration(commands.Cog):
         username_is_taken = white_list.get_user(username)
         if not username_is_taken:
             embed = discord.Embed(
-                title=self.bot.wl_brand + " - Whitelist Add",
+                title=self.bot.wl_brand + " - Whitelist Remove",
                 description="Could not remove {} from the whtielist!\n```diff\n- There is no such whitelisted username -\n```".format(
                     username
                 ),
@@ -132,6 +132,26 @@ class Administration(commands.Cog):
             color=0xFFFFFF,
         )
         await ctx.reply(embed=embed, ephemeral=True)
+
+    @commands.hybrid_command(
+        name="evict", usage=".evict", description="Clears someone elses session"
+    )
+    @commands.guild_only()
+    @commands.has_permissions(moderate_members=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def session_term(self, ctx: commands.Context, target: discord.Member):
+        white_list = self.bot.wl_store.get_whitelist()
+        session = white_list.get_session(target.id)
+        if session is None:
+            await ctx.reply(f"{target.metnion} does not have any sessions!", ephemeral=True)
+            return
+        white_list.get_user(session).drop_session(target.id)
+        await ctx.reply(f"Sessions cleared for {target.mention}", ephemeral=True)
+        try:
+            await target.edit(nick=None)
+        except Exception as e:
+            await ctx.reply(f"I could not change {target.mention}'s displayname!", ephemeral=True, delete_after=5.0)
+
 
 
 async def setup(bot: commands.Bot):
