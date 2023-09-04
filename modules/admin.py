@@ -259,6 +259,72 @@ class Administration(commands.Cog):
                 ephemeral=True,
             )
 
+    @commands.hybrid_group(
+        name="data",
+        usage=".data ( save | age | reload )",
+        description="Allows managing the data store",
+    )
+    @commands.guild_only()
+    @commands.has_permissions(manage_guild=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def data_store(self, ctx: commands.Context):
+        if ctx.invoked_subcommand is None:
+            await ctx.reply(
+                "Please provide a valid sub command: `age`, `save`, `reload`",
+                ephemeral=True,
+            )
+            return
+
+    @data_store.command(
+        name="age",
+        usage=".data age",
+        description="Shows how long since the data store was last saved",
+    )
+    @commands.guild_only()
+    @commands.has_permissions(manage_guild=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def data_store_age(self, ctx: commands.Context):
+        tms = round(self.bot.wl_store.last_save.timestamp())
+        tml = round(self.bot.wl_store.last_update.timestamp())
+        await ctx.reply(
+            f"Last data store save was <t:{tms}:R>\nLast data store update (read) was <t:{tml}:R>",
+            ephemeral=True,
+        )
+
+    @data_store.command(
+        name="save",
+        usage=".data save",
+        description="Forcefully saves the data store to the drive",
+    )
+    @commands.guild_only()
+    @commands.has_permissions(manage_guild=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def data_store_save(self, ctx: commands.Context):
+        try:
+            self.bot.wl_store.save()
+            await ctx.reply(f"Data store saved!", ephemeral=True)
+        except:
+            await ctx.reply(
+                f"**ERROR:** Data store could not be saved!", ephemeral=True
+            )
+
+    @data_store.command(
+        name="reload",
+        usage=".data reload",
+        description="Reloads the data store by saving and then loading it",
+    )
+    @commands.guild_only()
+    @commands.has_permissions(manage_guild=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def data_store_reload(self, ctx: commands.Context):
+        try:
+            self.bot.wl_store.reload()
+            await ctx.reply(f"Data store reloaded!", ephemeral=True)
+        except:
+            await ctx.reply(
+                f"**ERROR:** Data store could not be reloaded!", ephemeral=True
+            )
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Administration(bot))
