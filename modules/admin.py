@@ -147,13 +147,23 @@ class Administration(commands.Cog):
                 f"{target.metnion} does not have any sessions!", ephemeral=True
             )
             return
-        white_list.get_user(session).drop_session(target.id)
+        user = white_list.get_user(session)
+        user.drop_session(target.id)
         await ctx.reply(f"Sessions cleared for {target.mention}", ephemeral=True)
         try:
             await target.edit(nick=None)
         except Exception as e:
             await ctx.reply(
                 f"I could not change {target.mention}'s displayname!",
+                ephemeral=True,
+                delete_after=5.0,
+            )
+        try:
+            roles = [ctx.guild.get_role(roleid) for roleid in user.roles]
+            await target.remove_roles(*roles)
+        except Exception as e:
+            await ctx.reply(
+                f"I could not derank {target.mention}!",
                 ephemeral=True,
                 delete_after=5.0,
             )
@@ -323,6 +333,54 @@ class Administration(commands.Cog):
         except:
             await ctx.reply(
                 f"**ERROR:** Data store could not be reloaded!", ephemeral=True
+            )
+
+    @commands.hybrid_command(
+        name="loginctl",
+        usage=".loginctl <member> <username>",
+        description="Adds the specified member to the session of the specified username.",
+    )
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def session_force_set(
+        self, ctx: commands.Context, member: discord.Member, username: str
+    ):
+        await ctx.defer(ephemeral=True)
+        white_list = self.bot.wl_store.get_whitelist()
+        session = white_list.get_session(member.id)
+        if session is not None:
+            await ctx.reply(f"{member.mention} already has a session!", ephemeral=True)
+            return
+        username = username.lower().replace(" ", "")
+        user = white_list.get_user(username)
+        if user is None:
+            await ctx.reply("Username does not exist", ephemeral=True)
+            return
+        try:
+            user.create_session(member.id)
+        except Exception as e:
+            await ctx.reply(
+                "This username cannot have any more sessions!", ephemeral=True
+            )
+            return
+        await ctx.reply(f"Logged {member.mention} in as {user.pretty}", ephemeral=True)
+        try:
+            await member.edit(nick=user.pretty)
+        except Exception as e:
+            await ctx.reply(
+                f"I could not change {member.mention}'s displayname!",
+                ephemeral=True,
+                delete_after=5.0,
+            )
+        try:
+            roles = [ctx.guild.get_role(roleid) for roleid in user.roles]
+            await member.add_roles(*roles)
+        except Exception as e:
+            await ctx.reply(
+                f"I could not rank {member.mention}!",
+                ephemeral=True,
+                delete_after=5.0,
             )
 
 
