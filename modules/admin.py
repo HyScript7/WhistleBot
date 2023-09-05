@@ -143,15 +143,121 @@ class Administration(commands.Cog):
         white_list = self.bot.wl_store.get_whitelist()
         session = white_list.get_session(target.id)
         if session is None:
-            await ctx.reply(f"{target.metnion} does not have any sessions!", ephemeral=True)
+            await ctx.reply(
+                f"{target.metnion} does not have any sessions!", ephemeral=True
+            )
             return
         white_list.get_user(session).drop_session(target.id)
         await ctx.reply(f"Sessions cleared for {target.mention}", ephemeral=True)
         try:
             await target.edit(nick=None)
         except Exception as e:
-            await ctx.reply(f"I could not change {target.mention}'s displayname!", ephemeral=True, delete_after=5.0)
+            await ctx.reply(
+                f"I could not change {target.mention}'s displayname!",
+                ephemeral=True,
+                delete_after=5.0,
+            )
 
+    @commands.hybrid_group(
+        name="roles",
+        usage=".roles ( sync [username] | ( link | unlink <username> <role> ) )",
+        description="Links roles to whitelist usernames",
+    )
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def roles(self, ctx: commands.Context):
+        if ctx.invoked_subcommand is None:
+            await ctx.reply(
+                "Please provide a valid sub command: `link`, `unlink`, `sync`",
+                ephemeral=True,
+            )
+            return
+
+    @roles.command(
+        name="link",
+        usage=".roles link <username> <role>",
+        description="Links a role to an account",
+    )
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def roles_link(
+        self, ctx: commands.Context, username: str, role: discord.Role
+    ):
+        await ctx.defer(ephemeral=True)
+        white_list = self.bot.wl_store.get_whitelist()
+        user = white_list.get_user(username)
+        if user is None:
+            await ctx.reply("Username does not exist", ephemeral=True)
+            return
+        user.roles.append(role.id)
+        await ctx.reply(
+            f"Successfully linked {role.mention} to {user.username}!", ephemeral=True
+        )
+
+    @roles.command(
+        name="unlink",
+        usage=".roles unlink <username> <role>",
+        description="Unlinks a role from an account",
+    )
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def roles_unlink(
+        self, ctx: commands.Context, username: str, role: discord.Role
+    ):
+        await ctx.defer(ephemeral=True)
+        white_list = self.bot.wl_store.get_whitelist()
+        user = white_list.get_user(username)
+        if user is None:
+            await ctx.reply("Username does not exist", ephemeral=True)
+            return
+        if role.id in user.roles:
+            user.roles.remove(role.id)
+            await ctx.reply(
+                f"Successfully unlinked {role.mention} from {user.username}!",
+                ephemeral=True,
+            )
+            return
+        await ctx.reply(
+            f"Failed: {role.mention} is not linked to {user.username}!", ephemeral=True
+        )
+
+    @roles.command(
+        name="sync",
+        usage=".roles sync [username]",
+        description="Makes sure the specific account(s) have their linked roles attached to users.",
+    )
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def roles_sync(self, ctx: commands.Context, username: str = None):
+        await ctx.defer(ephemeral=True)
+        white_list = self.bot.wl_store.get_whitelist()
+        if username:
+            user = white_list.get_user(username)
+            if user is None:
+                await ctx.reply("Username does not exist", ephemeral=True)
+                return
+            users = [user]
+        else:
+            users = white_list.get_users().values()
+        for user in users:
+            roles = [ctx.guild.get_role(roleid) for roleid in user.roles]
+            for member_id in user.list_sessions():
+                member = await ctx.guild.fetch_member(member_id)
+                await member.add_roles(*roles)
+        if username:
+            await ctx.reply(
+                f"Synced all sessions of {user.username}!",
+                ephemeral=True,
+            )
+        else:
+            await ctx.reply(
+                f"Synced all sessions of all whitelisted usernames!",
+                ephemeral=True,
+            )
 
 
 async def setup(bot: commands.Bot):

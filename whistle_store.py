@@ -9,7 +9,12 @@ WLSTORE_FILENAME = "store.json"
 
 INITIAL_DATA = {
     "whitelist": {
-        "example_user": {"pretty": "Example User", "session_limit": 0, "sessions": []}
+        "example_user": {
+            "pretty": "Example User",
+            "session_limit": 0,
+            "sessions": [],
+            "roles": [],
+        }
     }
 }
 
@@ -17,18 +22,21 @@ INITIAL_DATA = {
 class User:
     username: str
     pretty: str
+    roles: List[int]
     __session_limit: int
     __sessions: List[int]
 
     def __init__(self, username: str, data: Dict):
         self.username = username
         self.pretty = data.get("pretty", username)
+        self.roles = data.get("roles", [])
         self.__session_limit = data.get("session_limit", 1)
         self.__sessions = data.get("sessions", [])
 
     def jsonify(self) -> Dict:
         return {
             "pretty": self.pretty,
+            "roles": self.roles,
             "session_limit": self.__session_limit,
             "sessions": self.__sessions,
         }
@@ -91,6 +99,7 @@ class Whitelist:
         pretty: str = None,
         max_sessions: int = 1,
         sessions: List[int] = [],
+        roles: List[int] = [],
     ) -> None:
         self.__users[username] = User(
             username,
@@ -98,11 +107,15 @@ class Whitelist:
                 "pretty": pretty if pretty else username,
                 "session_limit": max_sessions,
                 "sessions": sessions,
+                "roles": roles,
             },
         )
 
-    def list_users(self) -> List[User]:
+    def list_users(self) -> Dict:
         return {username: user.jsonify() for username, user in self.__users.items()}
+
+    def get_users(self) -> List[User]:
+        return {username: user for username, user in self.__users.items()}
 
     def remove_user(self, username: str):
         self.__users.pop(username, None)

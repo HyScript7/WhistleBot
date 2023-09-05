@@ -74,7 +74,7 @@ class User(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions()
     @commands.cooldown(1, 2, commands.BucketType.member)
-    async def session_set(self, ctx: commands.Context, username: str):
+    async def session_whois(self, ctx: commands.Context, username: str):
         await ctx.defer(ephemeral=True)
         white_list = self.bot.wl_store.get_whitelist()
         username = username.lower().replace(" ", "")
