@@ -42,6 +42,15 @@ class User(commands.Cog):
                 ephemeral=True,
                 delete_after=5.0,
             )
+        try:
+            roles = [ctx.guild.get_role(roleid) for roleid in user.roles]
+            await ctx.author.add_roles(*roles)
+        except Exception as e:
+            await ctx.reply(
+                f"I could not rank you!",
+                ephemeral=True,
+                delete_after=5.0,
+            )
 
     @commands.hybrid_command(
         name="logout", usage=".logout", description="Clears your sessions"
@@ -55,13 +64,23 @@ class User(commands.Cog):
         if session is None:
             await ctx.reply("You do not have any sessions!", ephemeral=True)
             return
-        white_list.get_user(session).drop_session(ctx.author.id)
+        user = white_list.get_user(session)
+        user.drop_session(ctx.author.id)
         await ctx.reply("Sessions cleared", ephemeral=True)
         try:
             await ctx.author.edit(nick=None)
         except Exception as e:
             await ctx.reply(
                 f"I could not change your displayname!",
+                ephemeral=True,
+                delete_after=5.0,
+            )
+        try:
+            roles = [ctx.guild.get_role(roleid) for roleid in user.roles]
+            await ctx.author.remove_roles(*roles)
+        except Exception as e:
+            await ctx.reply(
+                f"I could not derank you!",
                 ephemeral=True,
                 delete_after=5.0,
             )
@@ -98,6 +117,11 @@ class User(commands.Cog):
         embed.add_field(
             name="Displayname",
             value=user.pretty,
+            inline=False,
+        )
+        embed.add_field(
+            name="Roles",
+            value="\n- ".join([""] + [f"<@&{id}>" for id in user.roles]),
             inline=False,
         )
         await ctx.reply(embed=embed, ephemeral=True)
